@@ -1,0 +1,69 @@
+version: 2
+project_name: gitea-operator
+
+release:
+  github:
+    owner: wim-de-groot 
+    name: gitea-operator 
+
+env:
+  - GO111MODULE=on
+  - CGO_ENABLED=0
+
+before:
+  hooks:
+    - go mod download
+
+builds:
+- id: manager
+  binary: manager/manager_{{ .Arch }}
+  main: cmd/main.go
+  no_unique_dist_dir: true
+  gcflags:
+    - all=-trimpath={{.Env.GOPATH}};{{.Env.PWD}}
+  ldflags:
+    - -s
+    - -w
+    - -X github.com/wim-de-groot/gitea-operator/pkg/versions.buildVersion={{.Env.VERSION}}
+    - -X github.com/wim-de-groot/gitea-operator/pkg/versions.buildCommit={{.Env.COMMIT}}
+    - -X github.com/wim-de-groot/gitea-operator/pkg/versions.buildDate={{.Env.DATE}}
+  goos:
+    - linux
+  goarch:
+    - amd64
+    - arm64
+
+- id: manager-race
+  binary: manager/manager_{{ .Arch }}
+  main: cmd/main.go
+  no_unique_dist_dir: true
+  skip: >-
+    {{ if and (isEnvSet "RACE") (eq .Env.RACE "true") }}false{{ else }}true{{ end }}
+  gcflags:
+    - all=-trimpath={{.Env.GOPATH}};{{.Env.PWD}}
+  ldflags:
+    - -race
+    - -s
+    - -w
+    - -X github.com/wim-de-groot/gitea-operator/pkg/versions.buildVersion={{.Env.VERSION}}
+    - -X github.com/wim-de-groot/gitea-operator/pkg/versions.buildCommit={{.Env.COMMIT}}
+    - -X github.com/wim-de-groot/gitea-operator/pkg/versions.buildDate={{.Env.DATE}}
+  goos:
+    - linux
+  goarch:
+    - amd64
+    - arm64
+
+checksum:
+  name_template: '{{ .ProjectName }}-{{ .Version }}-checksums.txt'
+
+snapshot:
+  version_template: "{{ .Tag }}-next"
+
+changelog:
+  disable: true
+
+signs:
+  - artifacts: all
+    args: ["--batch", "-u", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}"]
+
