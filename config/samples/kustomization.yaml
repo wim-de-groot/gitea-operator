@@ -1,0 +1,5 @@
+## Append samples of your project ##
+resources:
+- core_alphav1_gitea.yaml
+- core_alphav1_gitearepo.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples
